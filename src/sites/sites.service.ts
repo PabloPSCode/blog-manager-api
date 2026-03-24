@@ -12,10 +12,10 @@ import {
   limit,
   query,
   setDoc,
+  where,
   type DocumentData,
   type DocumentSnapshot,
   type QueryDocumentSnapshot,
-  where,
 } from 'firebase/firestore/lite';
 import {
   DEFAULT_SITE_PASSWORD,
@@ -99,6 +99,16 @@ export class SitesService {
       SITES_COLLECTION,
     );
     const siteRef = doc(sitesCollection);
+    const alreadyExistingSite = await this.findActiveByDomain(
+      createSiteDto.domain,
+    );
+
+    if (alreadyExistingSite) {
+      throw new BadRequestException(
+        `A site with the domain ${createSiteDto.domain} already exists.`,
+      );
+    }
+
     const site = this.buildSiteDocument(createSiteDto);
 
     try {
