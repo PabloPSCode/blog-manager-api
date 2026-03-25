@@ -18,9 +18,9 @@ import {
   type QueryDocumentSnapshot,
 } from 'firebase/firestore/lite';
 import {
-  DEFAULT_SITE_PASSWORD,
   ICreateSiteDTO,
   ISite,
+  SITE_PASSWORD_PREFIX,
 } from '../domain/dtos/site.dto';
 import { FirebaseService } from '../firebase/firebase.service';
 
@@ -144,17 +144,18 @@ export class SitesService {
 
   private buildSiteDocument(createSiteDto: ICreateSiteDTO): SiteDocument {
     const timestamp = new Date().toISOString();
+    const clientWhatsapp = this.requireValue(
+      createSiteDto.clientWhatsapp,
+      'clientWhatsapp',
+    );
 
     return {
       url: this.requireValue(createSiteDto.url, 'url'),
       domain: this.requireDomain(createSiteDto.domain),
-      clientWhatsapp: this.requireValue(
-        createSiteDto.clientWhatsapp,
-        'clientWhatsapp',
-      ),
+      clientWhatsapp,
       password:
         this.normalizeOptionalValue(createSiteDto.password) ??
-        DEFAULT_SITE_PASSWORD,
+        this.buildGeneratedPassword(clientWhatsapp),
       createdAt: timestamp,
       updatedAt: timestamp,
       deletedAt: null,
@@ -191,5 +192,17 @@ export class SitesService {
     const normalizedValue = this.normalizeOptionalValue(value);
 
     return normalizedValue?.toLowerCase();
+  }
+
+  private buildGeneratedPassword(clientWhatsapp: string): string {
+    const clientWhatsappDigits = clientWhatsapp.replace(/\D/g, '');
+
+    if (clientWhatsappDigits.length < 4) {
+      throw new BadRequestException(
+        'clientWhatsapp must contain at least 4 digits to generate the password.',
+      );
+    }
+
+    return `${SITE_PASSWORD_PREFIX}${clientWhatsappDigits.slice(-4)}`;
   }
 }

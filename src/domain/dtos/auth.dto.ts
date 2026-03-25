@@ -6,5 +6,6 @@ export interface ISiteLoginDTO {
 }
 
 export interface IAuthenticatedSiteDTO extends ISite {
+  id: string;
   jwt: string;
 }

@@ -1,6 +1,6 @@
 import { IPost } from './post.dto';
 
-export const DEFAULT_SITE_PASSWORD = 'PLSSistemas7963';
+export const SITE_PASSWORD_PREFIX = 'plssistemas';
 
 export interface ISite {
   id?: string;

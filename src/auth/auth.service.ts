@@ -19,9 +19,12 @@ export class AuthService {
   async login(credentials: ISiteLoginDTO): Promise<IAuthenticatedSiteDTO> {
     const domain = this.requireValue(credentials.domain, 'domain');
     const password = this.requireValue(credentials.password, 'password');
-    const site = await this.sitesService.findActiveByDomain(domain);
+    const site = this.requireAuthenticatedSite(
+      await this.sitesService.findActiveByDomain(domain),
+      'Invalid domain or password.',
+    );
 
-    if (!site || site.password !== password || !site.id) {
+    if (site.password !== password) {
       throw new UnauthorizedException('Invalid domain or password.');
     }
 
@@ -38,13 +41,23 @@ export class AuthService {
 
   async validateJwtPayload(payload: JwtPayload): Promise<ISite> {
     const siteId = this.requireValue(payload.sub, 'sub');
-    const site = await this.sitesService.findActiveById(siteId);
-
-    if (!site) {
-      throw new UnauthorizedException('Invalid JWT.');
-    }
+    const site = this.requireAuthenticatedSite(
+      await this.sitesService.findActiveById(siteId),
+      'Invalid JWT.',
+    );
 
     return site;
+  }
+
+  private requireAuthenticatedSite(
+    site: ISite | null,
+    errorMessage: string,
+  ): ISite & { id: string } {
+    if (!site || !site.id) {
+      throw new UnauthorizedException(errorMessage);
+    }
+
+    return site as ISite & { id: string };
   }
 
   private requireValue(value: string | undefined, fieldName: string): string {
