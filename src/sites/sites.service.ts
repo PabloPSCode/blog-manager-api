@@ -25,6 +25,10 @@ import {
 import { FirebaseService } from '../firebase/firebase.service';
 
 type SiteDocument = Omit<ISite, 'id' | 'posts'>;
+export type CreateSiteResult = {
+  site: ISite;
+  created: boolean;
+};
 
 const SITES_COLLECTION = 'sites';
 
@@ -93,7 +97,7 @@ export class SitesService {
       );
   }
 
-  async create(createSiteDto: ICreateSiteDTO): Promise<ISite> {
+  async create(createSiteDto: ICreateSiteDTO): Promise<CreateSiteResult> {
     const sitesCollection = collection(
       this.firebaseService.getFirestore(),
       SITES_COLLECTION,
@@ -104,9 +108,10 @@ export class SitesService {
     );
 
     if (alreadyExistingSite) {
-      throw new BadRequestException(
-        `A site with the domain ${createSiteDto.domain} already exists.`,
-      );
+      return {
+        site: alreadyExistingSite,
+        created: false,
+      };
     }
 
     const site = this.buildSiteDocument(createSiteDto);
@@ -120,8 +125,11 @@ export class SitesService {
     }
 
     return {
-      id: siteRef.id,
-      ...site,
+      site: {
+        id: siteRef.id,
+        ...site,
+      },
+      created: true,
     };
   }
 

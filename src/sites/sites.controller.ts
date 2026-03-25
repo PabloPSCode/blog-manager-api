@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  Post,
+  Res,
+} from '@nestjs/common';
+import type { Response } from 'express';
 import type { ICreateSiteDTO, ISite } from '../domain/dtos/site.dto';
 import { SitesService } from './sites.service';
 
@@ -17,7 +26,13 @@ export class SitesController {
   }
 
   @Post()
-  create(@Body() createSiteDto: ICreateSiteDTO): Promise<ISite> {
-    return this.sitesService.create(createSiteDto);
+  async create(
+    @Body() createSiteDto: ICreateSiteDTO,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<ISite> {
+    const { site, created } = await this.sitesService.create(createSiteDto);
+    response.status(created ? HttpStatus.CREATED : HttpStatus.OK);
+
+    return site;
   }
 }
