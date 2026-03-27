@@ -1,8 +1,18 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { IAuthenticatedSiteDTO, ISiteLoginDTO } from '../domain/dtos/auth.dto';
+import {
+  IAuthenticatedSiteDTO,
+  ICreateSitePasswordRecoveryTokenDTO,
+  ICreateSitePasswordRecoveryTokenResponseDTO,
+  IRecoverSitePasswordDTO,
+  IRecoverSitePasswordResponseDTO,
+  ISiteLoginDTO,
+  IValidateSitePasswordRecoveryTokenDTO,
+  IValidateSitePasswordRecoveryTokenResponseDTO,
+} from '../domain/dtos/auth.dto';
 import { ISite } from '../domain/dtos/site.dto';
 import { SitesService } from '../sites/sites.service';
+import { PasswordRecoveryService } from './password-recovery.service';
 
 type JwtPayload = {
   sub: string;
@@ -14,6 +24,7 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly sitesService: SitesService,
+    private readonly passwordRecoveryService: PasswordRecoveryService,
   ) {}
 
   async login(credentials: ISiteLoginDTO): Promise<IAuthenticatedSiteDTO> {
@@ -47,6 +58,24 @@ export class AuthService {
     );
 
     return site;
+  }
+
+  createRecoveryPasswordToken(
+    payload: ICreateSitePasswordRecoveryTokenDTO,
+  ): Promise<ICreateSitePasswordRecoveryTokenResponseDTO> {
+    return this.passwordRecoveryService.createToken(payload);
+  }
+
+  recoveryPassword(
+    payload: IRecoverSitePasswordDTO,
+  ): Promise<IRecoverSitePasswordResponseDTO> {
+    return this.passwordRecoveryService.recoverPassword(payload);
+  }
+
+  validateRecoveryPasswordToken(
+    payload: IValidateSitePasswordRecoveryTokenDTO,
+  ): Promise<IValidateSitePasswordRecoveryTokenResponseDTO> {
+    return this.passwordRecoveryService.validateToken(payload);
   }
 
   private requireAuthenticatedSite(

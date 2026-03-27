@@ -4,19 +4,11 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  query,
-  setDoc,
-  where,
-  type DocumentData,
-  type DocumentSnapshot,
-  type QueryDocumentSnapshot,
-} from 'firebase/firestore/lite';
+import type {
+  DocumentData,
+  DocumentSnapshot,
+  QueryDocumentSnapshot,
+} from 'firebase-admin/firestore';
 import {
   ICreateSiteDTO,
   ISite,
@@ -38,13 +30,12 @@ export class SitesService {
 
   async findActiveByDomain(domain: string): Promise<ISite | null> {
     const normalizedDomain = this.requireDomain(domain);
-    const snapshot = await getDocs(
-      query(
-        collection(this.firebaseService.getFirestore(), SITES_COLLECTION),
-        where('domain', '==', normalizedDomain),
-        limit(1),
-      ),
-    );
+    const snapshot = await this.firebaseService
+      .getFirestore()
+      .collection(SITES_COLLECTION)
+      .where('domain', '==', normalizedDomain)
+      .limit(1)
+      .get();
 
     const site = snapshot.docs
       .map((siteSnapshot) => this.mapSiteSnapshot(siteSnapshot))
@@ -56,13 +47,11 @@ export class SitesService {
 
   async findActiveById(siteId: string): Promise<ISite | null> {
     const normalizedSiteId = this.requireValue(siteId, 'id');
-    const snapshot = await getDoc(
-      doc(
-        this.firebaseService.getFirestore(),
-        SITES_COLLECTION,
-        normalizedSiteId,
-      ),
-    );
+    const snapshot = await this.firebaseService
+      .getFirestore()
+      .collection(SITES_COLLECTION)
+      .doc(normalizedSiteId)
+      .get();
     const site = this.mapSiteSnapshot(snapshot);
 
     if (!site || site.deletedAt !== null) {
@@ -84,9 +73,10 @@ export class SitesService {
   }
 
   async list(): Promise<ISite[]> {
-    const snapshot = await getDocs(
-      collection(this.firebaseService.getFirestore(), SITES_COLLECTION),
-    );
+    const snapshot = await this.firebaseService
+      .getFirestore()
+      .collection(SITES_COLLECTION)
+      .get();
 
     return snapshot.docs
       .map((siteSnapshot) => this.mapSiteSnapshot(siteSnapshot))
@@ -98,11 +88,10 @@ export class SitesService {
   }
 
   async create(createSiteDto: ICreateSiteDTO): Promise<CreateSiteResult> {
-    const sitesCollection = collection(
-      this.firebaseService.getFirestore(),
-      SITES_COLLECTION,
-    );
-    const siteRef = doc(sitesCollection);
+    const siteRef = this.firebaseService
+      .getFirestore()
+      .collection(SITES_COLLECTION)
+      .doc();
     const alreadyExistingSite = await this.findActiveByDomain(
       createSiteDto.domain,
     );
@@ -117,7 +106,7 @@ export class SitesService {
     const site = this.buildSiteDocument(createSiteDto);
 
     try {
-      await setDoc(siteRef, site);
+      await siteRef.set(site);
     } catch {
       throw new InternalServerErrorException(
         'Failed to create the site record.',
@@ -138,7 +127,7 @@ export class SitesService {
       | DocumentSnapshot<DocumentData>
       | QueryDocumentSnapshot<DocumentData>,
   ): ISite | null {
-    if (!snapshot.exists()) {
+    if (!snapshot.exists) {
       return null;
     }
 

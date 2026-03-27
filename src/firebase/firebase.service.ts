@@ -1,20 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { FirebaseApp, getApp, getApps, initializeApp } from 'firebase/app';
-import { Firestore, getFirestore } from 'firebase/firestore/lite';
+import { App, cert, getApp, getApps, initializeApp } from 'firebase-admin/app';
+import { Firestore, getFirestore } from 'firebase-admin/firestore';
 
-type FirebaseConfig = {
-  apiKey: string;
-  authDomain?: string;
+type FirebaseAdminConfig = {
   projectId: string;
+  clientEmail: string;
+  privateKey: string;
   storageBucket?: string;
-  messagingSenderId?: string;
-  appId?: string;
 };
 
 @Injectable()
 export class FirebaseService {
-  private firebaseApp: FirebaseApp | null = null;
+  private firebaseApp: App | null = null;
   private firestoreDb: Firestore | null = null;
 
   constructor(private readonly configService: ConfigService) {}
@@ -29,7 +27,7 @@ export class FirebaseService {
     return this.firestoreDb;
   }
 
-  private getFirebaseApp(): FirebaseApp {
+  private getFirebaseApp(): App {
     if (this.firebaseApp) {
       return this.firebaseApp;
     }
@@ -40,54 +38,87 @@ export class FirebaseService {
       getApps().length > 0
         ? getApp()
         : initializeApp({
-            apiKey: config.apiKey,
-            authDomain: config.authDomain,
             projectId: config.projectId,
             storageBucket: config.storageBucket,
-            messagingSenderId: config.messagingSenderId,
-            appId: config.appId,
+            credential: cert({
+              projectId: config.projectId,
+              clientEmail: config.clientEmail,
+              privateKey: config.privateKey,
+            }),
           });
 
     return this.firebaseApp;
   }
 
-  private readFirebaseConfig(): FirebaseConfig {
-    const apiKey = this.readEnvValue('FIREBASE_API_KEY');
-    const authDomain = this.readEnvValue('FIREBASE_AUTH_DOMAIN');
+  private readFirebaseConfig(): FirebaseAdminConfig {
     const storageBucket = this.readEnvValue('FIREBASE_STORAGE_BUCKET');
     const projectId =
+      this.readEnvValue('FIREBASE_ADMIN_PROJECT_ID') ??
       this.readEnvValue('FIREBASE_PROJECT_ID') ??
-      authDomain?.replace('.firebaseapp.com', '') ??
       storageBucket
         ?.replace('.appspot.com', '')
         .replace('.firebasestorage.app', '');
+    const clientEmail = this.readEnvValue('FIREBASE_ADMIN_CLIENT_EMAIL');
+    const privateKey = this.readPrivateKeyEnvValue(
+      'FIREBASE_ADMIN_PRIVATE_KEY',
+    );
 
     const config = {
-      apiKey,
-      authDomain:
-        authDomain ?? (projectId ? `${projectId}.firebaseapp.com` : undefined),
       projectId,
+      clientEmail,
+      privateKey,
       storageBucket:
         storageBucket ??
         (projectId ? `${projectId}.firebasestorage.app` : undefined),
-      messagingSenderId: this.readEnvValue('FIREBASE_MESSAGING_SENDER_ID'),
-      appId: this.readEnvValue('FIREBASE_APP_ID'),
     };
 
     const missingConfig = Object.entries(config)
-      .filter(([key, value]) => ['apiKey', 'projectId'].includes(key) && !value)
+      .filter(([_, value]) => !value)
       .map(([key]) => key);
 
     if (missingConfig.length > 0) {
       throw new Error(
-        `Missing Firebase config: ${missingConfig.join(', ')}. Fill the value in .env and restart the API.`,
+        `Missing Firebase admin config: ${missingConfig.join(', ')}. Fill the value in .env and restart the API.`,
       );
     }
 
-    return config as FirebaseConfig;
+    return config as FirebaseAdminConfig;
   }
 
   private readEnvValue(key: string): string | undefined {
-    return this.configService.get<string>(key) ?? undefined;
+    const value = this.configService.get<string>(key);
+
+    if (typeof value !== 'string') {
+      return undefined;
+    }
+
+    const normalizedValue = value.trim();
+
+    if (!normalizedValue) {
+      return undefined;
+    }
+
+    return this.stripWrappingQuotes(normalizedValue);
+  }
+
+  private readPrivateKeyEnvValue(key: string): string | undefined {
+    const value = this.readEnvValue(key);
+
+    return value?.replace(/\\n/g, '\n');
+  }
+
+  private stripWrappingQuotes(value: string): string {
+    const normalizedValue = value.endsWith(',')
+      ? value.slice(0, -1).trim()
+      : value;
+
+    if (
+      (normalizedValue.startsWith('"') && normalizedValue.endsWith('"')) ||
+      (normalizedValue.startsWith("'") && normalizedValue.endsWith("'"))
+    ) {
+      return normalizedValue.slice(1, -1);
+    }
+
+    return normalizedValue;
   }
 }

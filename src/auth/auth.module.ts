@@ -8,15 +8,20 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import type { SignOptions } from 'jsonwebtoken';
+import { FirebaseModule } from '../firebase/firebase.module';
 import { SitesModule } from '../sites/sites.module';
+import { WhatsappModule } from '../whatsapp/whatsapp.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthMiddleware } from './jwt-auth.middleware';
 import { JwtStrategy } from './jwt.strategy';
+import { PasswordRecoveryService } from './password-recovery.service';
 
 @Module({
   imports: [
+    FirebaseModule,
     SitesModule,
+    WhatsappModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -40,7 +45,7 @@ import { JwtStrategy } from './jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, PasswordRecoveryService],
   exports: [AuthService],
 })
 export class AuthModule implements NestModule {
