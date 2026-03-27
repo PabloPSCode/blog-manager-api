@@ -13,6 +13,7 @@ import { SitesModule } from '../sites/sites.module';
 import { WhatsappModule } from '../whatsapp/whatsapp.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtAuthMiddleware } from './jwt-auth.middleware';
 import { JwtStrategy } from './jwt.strategy';
 import { PasswordRecoveryService } from './password-recovery.service';
@@ -45,8 +46,8 @@ import { PasswordRecoveryService } from './password-recovery.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, PasswordRecoveryService],
-  exports: [AuthService],
+  providers: [AuthService, JwtStrategy, PasswordRecoveryService, JwtAuthGuard],
+  exports: [AuthService, JwtAuthGuard],
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
