@@ -66,7 +66,7 @@ export class WhatsappService {
       }),
     }).catch(() => {
       throw new BadGatewayException(
-        'Failed to connect to the WhatsApp provider.',
+        'Não foi possível se conectar ao provedor de WhatsApp.',
       );
     });
 
@@ -77,7 +77,7 @@ export class WhatsappService {
 
       throw new BadGatewayException(
         this.extractProviderErrorMessage(errorResponse) ??
-          `WhatsApp provider returned HTTP ${response.status}.`,
+          `O provedor de WhatsApp retornou o erro HTTP ${response.status}.`,
       );
     }
 
@@ -101,7 +101,7 @@ export class WhatsappService {
 
     if (normalizedPhoneNumber.length < 10) {
       throw new InternalServerErrorException(
-        'clientWhatsapp must contain a valid WhatsApp number with country code.',
+        'O WhatsApp do cliente deve ser um número válido com código do país.',
       );
     }
 
@@ -113,7 +113,7 @@ export class WhatsappService {
 
     if (!value) {
       throw new InternalServerErrorException(
-        `Missing ${key}. Fill the value in .env and restart the API.`,
+        `A configuração ${key} não foi preenchida. Atualize o arquivo .env e reinicie a API.`,
       );
     }
 

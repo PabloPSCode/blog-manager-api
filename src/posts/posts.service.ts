@@ -109,7 +109,7 @@ export class PostsService {
       post.siteId !== this.requireValue(siteId, 'siteId') ||
       post.deletedAt !== null
     ) {
-      throw new NotFoundException(`Post ${postId} was not found.`);
+      throw new NotFoundException('Post não encontrado.');
     }
 
     return post;
@@ -238,7 +238,20 @@ export class PostsService {
     const normalizedValue = value?.trim();
 
     if (!normalizedValue) {
-      throw new BadRequestException(`${fieldName} is required.`);
+      const translatedFieldName =
+        fieldName === 'siteId'
+          ? 'O site'
+          : fieldName === 'postId'
+            ? 'O post'
+            : fieldName === 'authorId'
+              ? 'O autor'
+              : fieldName === 'title'
+                ? 'O título'
+                : fieldName === 'htmlContent'
+                  ? 'O conteúdo do post'
+                  : 'Este campo';
+
+      throw new BadRequestException(`${translatedFieldName} é obrigatório.`);
     }
 
     return normalizedValue;

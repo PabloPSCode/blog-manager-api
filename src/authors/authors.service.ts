@@ -97,7 +97,7 @@ export class AuthorsService {
       author.siteId !== this.requireValue(siteId, 'siteId') ||
       author.deletedAt !== null
     ) {
-      throw new NotFoundException(`Author ${authorId} was not found.`);
+      throw new NotFoundException('Autor não encontrado.');
     }
 
     return author;
@@ -218,7 +218,18 @@ export class AuthorsService {
     const normalizedValue = value?.trim();
 
     if (!normalizedValue) {
-      throw new BadRequestException(`${fieldName} is required.`);
+      const translatedFieldName =
+        fieldName === 'siteId'
+          ? 'O site'
+          : fieldName === 'authorId'
+            ? 'O autor'
+            : fieldName === 'name'
+              ? 'O nome'
+              : fieldName === 'bio'
+                ? 'A biografia'
+                : 'Este campo';
+
+      throw new BadRequestException(`${translatedFieldName} é obrigatório.`);
     }
 
     return normalizedValue;

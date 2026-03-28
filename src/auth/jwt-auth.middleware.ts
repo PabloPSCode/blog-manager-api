@@ -20,7 +20,11 @@ export class JwtAuthMiddleware implements NestMiddleware {
         }
 
         if (!user) {
-          next(new UnauthorizedException('Missing or invalid JWT.'));
+          next(
+            new UnauthorizedException(
+              'Sua sessão expirou. Faça login novamente.',
+            ),
+          );
           return;
         }
 

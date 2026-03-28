@@ -32,11 +32,11 @@ export class AuthService {
     const password = this.requireValue(credentials.password, 'password');
     const site = this.requireAuthenticatedSite(
       await this.sitesService.findActiveByDomain(domain),
-      'Invalid domain or password.',
+      'Domínio ou senha inválidos.',
     );
 
     if (site.password !== password) {
-      throw new UnauthorizedException('Invalid domain or password.');
+      throw new UnauthorizedException('Domínio ou senha inválidos.');
     }
 
     const jwt = await this.jwtService.signAsync({
@@ -54,7 +54,7 @@ export class AuthService {
     const siteId = this.requireValue(payload.sub, 'sub');
     const site = this.requireAuthenticatedSite(
       await this.sitesService.findActiveById(siteId),
-      'Invalid JWT.',
+      'Sua sessão é inválida. Faça login novamente.',
     );
 
     return site;
@@ -93,7 +93,16 @@ export class AuthService {
     const normalizedValue = value?.trim();
 
     if (!normalizedValue) {
-      throw new UnauthorizedException(`${fieldName} is required.`);
+      const translatedFieldName =
+        fieldName === 'domain'
+          ? 'O domínio'
+          : fieldName === 'password'
+            ? 'A senha'
+            : fieldName === 'sub'
+              ? 'A sessão'
+              : 'Este campo';
+
+      throw new UnauthorizedException(`${translatedFieldName} é obrigatório.`);
     }
 
     return normalizedValue;

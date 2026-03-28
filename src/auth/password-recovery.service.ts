@@ -69,7 +69,7 @@ export class PasswordRecoveryService {
       await tokenRef.set(token);
     } catch {
       throw new InternalServerErrorException(
-        'Failed to generate the recovery token.',
+        'Não foi possível gerar o código de recuperação.',
       );
     }
 
@@ -86,7 +86,8 @@ export class PasswordRecoveryService {
     }
 
     return {
-      message: 'Recovery code sent successfully to the site WhatsApp.',
+      message:
+        'Código de recuperação enviado com sucesso para o WhatsApp do site.',
       domain: site.domain,
       expiresAt,
     };
@@ -117,11 +118,13 @@ export class PasswordRecoveryService {
     try {
       await batch.commit();
     } catch {
-      throw new InternalServerErrorException('Failed to update the password.');
+      throw new InternalServerErrorException(
+        'Não foi possível atualizar a senha.',
+      );
     }
 
     return {
-      message: 'Password updated successfully.',
+      message: 'Senha atualizada com sucesso.',
     };
   }
 
@@ -134,7 +137,7 @@ export class PasswordRecoveryService {
     await this.requireActiveToken(site.id, normalizedCode);
 
     return {
-      message: 'Recovery code is valid.',
+      message: 'Código de recuperação válido.',
       domain: site.domain,
     };
   }
@@ -147,7 +150,7 @@ export class PasswordRecoveryService {
 
     if (!site || !site.id) {
       throw new BadRequestException(
-        `No active site was found for domain ${normalizedDomain}.`,
+        `Nenhum site ativo foi encontrado para o domínio ${normalizedDomain}.`,
       );
     }
 
@@ -180,7 +183,9 @@ export class PasswordRecoveryService {
       );
 
     if (!token) {
-      throw new UnauthorizedException('Invalid or expired recovery code.');
+      throw new UnauthorizedException(
+        'Código de recuperação inválido ou expirado.',
+      );
     }
 
     return token;
@@ -253,7 +258,9 @@ export class PasswordRecoveryService {
     const normalizedCode = this.requireValue(code, 'code');
 
     if (!/^\d{6}$/.test(normalizedCode)) {
-      throw new BadRequestException('code must contain exactly 6 digits.');
+      throw new BadRequestException(
+        'O código deve conter exatamente 6 dígitos.',
+      );
     }
 
     return normalizedCode;
@@ -263,7 +270,16 @@ export class PasswordRecoveryService {
     const normalizedValue = value?.trim();
 
     if (!normalizedValue) {
-      throw new BadRequestException(`${fieldName} is required.`);
+      const translatedFieldName =
+        fieldName === 'domain'
+          ? 'O domínio'
+          : fieldName === 'password'
+            ? 'A senha'
+            : fieldName === 'code'
+              ? 'O código'
+              : 'Este campo';
+
+      throw new BadRequestException(`${translatedFieldName} é obrigatório.`);
     }
 
     return normalizedValue;

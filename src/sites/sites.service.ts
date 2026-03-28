@@ -66,7 +66,7 @@ export class SitesService {
     const site = await this.findActiveById(normalizedSiteId);
 
     if (!site) {
-      throw new NotFoundException(`Site ${normalizedSiteId} was not found.`);
+      throw new NotFoundException('Site não encontrado.');
     }
 
     return site;
@@ -109,7 +109,7 @@ export class SitesService {
       await siteRef.set(site);
     } catch {
       throw new InternalServerErrorException(
-        'Failed to create the site record.',
+        'Não foi possível cadastrar o site.',
       );
     }
 
@@ -163,7 +163,16 @@ export class SitesService {
     const normalizedValue = this.normalizeOptionalValue(value);
 
     if (!normalizedValue) {
-      throw new BadRequestException(`${fieldName} is required.`);
+      const translatedFieldName =
+        fieldName === 'id'
+          ? 'O identificador'
+          : fieldName === 'clientWhatsapp'
+            ? 'O WhatsApp do cliente'
+            : fieldName === 'url'
+              ? 'A URL do site'
+              : 'Este campo';
+
+      throw new BadRequestException(`${translatedFieldName} é obrigatório.`);
     }
 
     return normalizedValue;
@@ -173,7 +182,7 @@ export class SitesService {
     const normalizedValue = this.normalizeDomain(value);
 
     if (!normalizedValue) {
-      throw new BadRequestException('domain is required.');
+      throw new BadRequestException('O domínio é obrigatório.');
     }
 
     return normalizedValue;
@@ -196,7 +205,7 @@ export class SitesService {
 
     if (clientWhatsappDigits.length < 4) {
       throw new BadRequestException(
-        'clientWhatsapp must contain at least 4 digits to generate the password.',
+        'O WhatsApp do cliente deve conter ao menos 4 dígitos para gerar a senha.',
       );
     }
 
