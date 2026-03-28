@@ -16,10 +16,20 @@ export interface ICreateAuthorDTO {
   avatarUrl: string;
 }
 
+export interface ICreateAuthorRequestDTO {
+  name: string;
+  bio: string;
+}
+
 export interface IUpdateAuthorDTO {
   id: string;
   name?: string;
   bio?: string;
   siteId?: string;
   avatarUrl?: string;
+}
+
+export interface IUpdateAuthorRequestDTO {
+  name?: string;
+  bio?: string;
 }
