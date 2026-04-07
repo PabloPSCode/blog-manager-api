@@ -1,0 +1,13 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT:-3336}
+    ports:
+      - "${PORT:-3336}:${PORT:-3336}"
+    restart: unless-stopped
