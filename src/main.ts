@@ -2,6 +2,10 @@
 import { NestFactory } from '@nestjs/core';
 import passport from 'passport';
 import { AppModule } from './app.module';
+import { PinoLoggerService } from './logging/pino-logger.service';
+import { RequestLoggingExceptionFilter } from './logging/request-logging-exception.filter';
+import { RequestLoggingInterceptor } from './logging/request-logging.interceptor';
+import { createRequestLoggingMiddleware } from './logging/request-logging.middleware';
 
 const defaultCorsOrigins = [
   'https://pls-blog-manager.web.app',
@@ -26,9 +30,11 @@ function getAllowedCorsOrigins() {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const logger = app.get(PinoLoggerService);
   const allowedCorsOrigins = getAllowedCorsOrigins();
 
+  app.useLogger(logger);
   app.enableCors({
     origin: (origin, callback) => {
       if (
@@ -47,7 +53,14 @@ async function bootstrap() {
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     optionsSuccessStatus: 204,
   });
+  app.use(createRequestLoggingMiddleware(logger));
+  app.useGlobalInterceptors(app.get(RequestLoggingInterceptor));
+  app.useGlobalFilters(app.get(RequestLoggingExceptionFilter));
   app.use(passport.initialize());
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+  const port = process.env.PORT ?? 3000;
+
+  await app.listen(port, '0.0.0.0');
+
+  logger.getLogger().info({ port }, 'Application started');
 }
 void bootstrap();
